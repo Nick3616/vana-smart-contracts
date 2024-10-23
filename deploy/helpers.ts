@@ -42,24 +42,43 @@ export async function verifyProxy(
   try {
     await run("verify:verify", {
       address: rootImplementationAddress,
-      force: true,
+      contract: "contracts/dlp/DataLiquidityPoolImplementation.sol:DataLiquidityPoolImplementation",
       constructorArguments: [],
     });
   } catch (e) {
-    console.log(e);
+    if (e.message.includes("Already Verified")) {
+      console.log("Implementation is already verified");
+    } else {
+      console.log("Implementation verification error:", e.message);
+    }
   }
 
   try {
+    console.log(`Verifying proxy: ${rootProxyAddress}`);
     await run("verify:verify", {
       address: rootProxyAddress,
-      force: true,
-      contract: proxyContractPath,
-      constructorArguments: [rootImplementationAddress, initializeData],
+      contract: "contracts/dlp/DataLiquidityPoolProxy.sol:DataLiquidityPoolProxy",
+      constructorArguments: [rootImplementationAddress, initializeData]
     });
   } catch (e) {
-    console.log(e);
+    if (e.message.includes("Already Verified")) {
+      console.log("Proxy is already verified");
+    } else {
+      console.log("Proxy verification error:", e.message);
+    }
+  }
+  try {
+    console.log("Linking proxy with implementation...");
+    await run("verify", {
+      address: rootProxyAddress,
+      constructorArguments: [rootImplementationAddress, initializeData]
+    });
+    console.log("Proxy successfully linked with implementation");
+  } catch (e) {
+    console.log("Error during linking:", e.message);
   }
 }
+  
 
 export async function verifyContract(
   address: string,
